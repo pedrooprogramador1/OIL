@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Angry Ball</title>
+    <style>
+        body { text-align: center; }
+        canvas { background: #fff; border: 1px solid black; }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+
+        let ball = { x: 150, y: 450, radius: 10, vx: 0, vy: 0, dragging: false, launched: false };
+        const sling = { x: 150, y: 450 };
+        let gravity = 0.5;
+        let blocks = [{ x: 600, y: 540, width: 50, height: 50 }];
+
+        canvas.addEventListener("mousedown", (e) => {
+            const dx = e.offsetX - ball.x;
+            const dy = e.offsetY - ball.y;
+            if (Math.hypot(dx, dy) < ball.radius) ball.dragging = true;
+        });
+
+        canvas.addEventListener("mousemove", (e) => {
+            if (ball.dragging) {
+                ball.x = e.offsetX;
+                ball.y = e.offsetY;
+            }
+        });
+
+        canvas.addEventListener("mouseup", (e) => {
+            if (ball.dragging) {
+                ball.vx = (sling.x - e.offsetX) * 0.2;
+                ball.vy = (sling.y - e.offsetY) * 0.2;
+                ball.dragging = false;
+                ball.launched = true;
+            }
+        });
+
+        function update() {
+            if (ball.launched) {
+                ball.vy += gravity;
+                ball.x += ball.vx;
+                ball.y += ball.vy;
+                
+                if (ball.y + ball.radius > canvas.height) {
+                    ball.y = canvas.height - ball.radius;
+                    ball.vy *= -0.6;
+                }
+                if (ball.x < 0 || ball.x + ball.radius > canvas.width) {
+                    ball.vx *= -0.6;
+                }
+                
+                blocks = blocks.filter(block => {
+                    return !(ball.x + ball.radius > block.x && ball.x - ball.radius < block.x + block.width &&
+                             ball.y + ball.radius > block.y && ball.y - ball.radius < block.y + block.height);
+                });
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.beginPath();
+            ctx.moveTo(sling.x, sling.y);
+            ctx.lineTo(ball.x, ball.y);
+            ctx.stroke();
+
+            ctx.fillStyle = "red";
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = "brown";
+            blocks.forEach(block => {
+                ctx.fillRect(block.x, block.y, block.width, block.height);
+            });
+        }
+
+        function loop() {
+            update();
+            draw();
+            requestAnimationFrame(loop);
+        }
+        loop();
+    </script>
+</body>
+</html>
